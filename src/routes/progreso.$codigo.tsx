@@ -228,3 +228,82 @@ function PortalContent({ data }: { data: PortalData }) {
     </div>
   );
 }
+
+type DiariaP = PortalData["diarias"][number];
+type TecnicaP = PortalData["tecnicas"][number];
+
+function ComparativoTable({ diarias, tecnicas }: { diarias: DiariaP[]; tecnicas: TecnicaP[] }) {
+  const promSem = (semana: number, k: keyof DiariaP) => {
+    const rows = diarias.filter((d) => d.semana === semana && d.asistencia !== "ausente");
+    const vals = rows.map((r) => r[k]).filter((v): v is number => typeof v === "number");
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  };
+  const tecVal = (semana: number, ind: string) => {
+    const row = tecnicas.find((t) => t.semana === semana && t.indicador === ind);
+    return row ? row.valor : null;
+  };
+  const cambio = (a: number | null, b: number | null, decimals = 0) => {
+    if (a == null || b == null) return { txt: "Sin comparativo", cls: "text-slate-400" };
+    const d = b - a;
+    const sign = d > 0 ? "+" : "";
+    const arrow = d > 0 ? "↑" : d < 0 ? "↓" : "=";
+    const cls = d > 0 ? "text-emerald-600" : d < 0 ? "text-red-500" : "text-amber-500";
+    return { txt: `${sign}${d.toFixed(decimals)} ${arrow}`, cls };
+  };
+  const actitud = [
+    { k: "esfuerzo" as const, label: "Esfuerzo y actitud" },
+    { k: "aplicacion_tactica" as const, label: "Aplicación táctica" },
+    { k: "trabajo_equipo" as const, label: "Trabajo en equipo" },
+    { k: "comunicacion" as const, label: "Comunicación en campo" },
+  ];
+  const tecnica: [string, string][] = [
+    ["conduccion", "Conducción controlada"],
+    ["pase", "Pase con precisión"],
+    ["recepcion", "Recepción limpia"],
+    ["control_aereo", "Control aéreo con pecho"],
+    ["remate", "Remate orientado"],
+  ];
+
+  return (
+    <div className="mt-3 overflow-x-auto">
+      <table className="w-full text-sm border-collapse">
+        <thead className="text-xs uppercase tracking-widest text-muted-foreground">
+          <tr>
+            <th className="text-left py-2">Indicador</th>
+            <th className="text-center py-2">S1</th>
+            <th className="text-center py-2">S4</th>
+            <th className="text-center py-2">Cambio</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colSpan={4} className="pt-3 pb-1 text-xs uppercase tracking-widest text-[#DDA82D]">Actitud (promedio del mes)</td></tr>
+          {actitud.map((ind) => {
+            const a = promSem(1, ind.k); const b = promSem(4, ind.k);
+            const c = cambio(a, b, 1);
+            return (
+              <tr key={ind.k} className="border-t border-black/5">
+                <td className="py-2">{ind.label}</td>
+                <td className="text-center">{a?.toFixed(1) ?? "—"}</td>
+                <td className="text-center">{b?.toFixed(1) ?? "—"}</td>
+                <td className={`text-center font-medium ${c.cls}`}>{c.txt}</td>
+              </tr>
+            );
+          })}
+          <tr><td colSpan={4} className="pt-4 pb-1 text-xs uppercase tracking-widest text-[#DDA82D]">Técnica</td></tr>
+          {tecnica.map(([key, label]) => {
+            const a = tecVal(1, key); const b = tecVal(4, key);
+            const c = cambio(a, b, 0);
+            return (
+              <tr key={key} className="border-t border-black/5">
+                <td className="py-2">{label}</td>
+                <td className="text-center">{a ?? "—"}</td>
+                <td className="text-center">{b ?? "—"}</td>
+                <td className={`text-center font-medium ${c.cls}`}>{c.txt}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
