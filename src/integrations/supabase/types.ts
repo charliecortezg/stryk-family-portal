@@ -364,6 +364,10 @@ export type Database = {
         Args: { p_jugador: string; p_mensaje: string; p_pass: string }
         Returns: undefined
       }
+      historial_jugador_coach: {
+        Args: { p_jugador: string; p_pin: string }
+        Returns: Json
+      }
       listar_evaluaciones_dia: {
         Args: { p_fecha: string; p_grupo: string; p_mes: string; p_pin: string }
         Returns: {
