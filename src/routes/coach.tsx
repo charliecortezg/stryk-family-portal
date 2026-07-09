@@ -142,19 +142,11 @@ function SkeletonScreen() {
 function ListaDia({ pin, mes, semana, fecha }: { pin: string; mes: string; semana: number; fecha: string }) {
   const [rows, setRows] = useState<EvalRow[] | null>(null);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
-  const [tecMap, setTecMap] = useState<Record<string, number>>({});
   const [showTip, setShowTip] = useState(false);
 
   const load = async () => {
-    const [ev, tec] = await Promise.all([
-      rpc<EvalRow[]>("listar_evaluaciones_dia", { p_pin: pin, p_grupo: null, p_mes: mes, p_fecha: fecha }),
-      rpc<TecnicaRow[]>("listar_evaluaciones_dia", { p_pin: pin, p_grupo: null, p_mes: mes, p_fecha: fecha }).then(() => [] as TecnicaRow[]).catch(() => [] as TecnicaRow[]),
-    ]);
+    const ev = await rpc<EvalRow[]>("listar_evaluaciones_dia", { p_pin: pin, p_grupo: null, p_mes: mes, p_fecha: fecha });
     setRows(ev);
-    // Load técnicas count per player for the active week
-    const map: Record<string, number> = {};
-    for (const t of tec) if (t.semana === semana) map[String((t as unknown as { jugador_id: string }).jugador_id ?? "")] = (map[String((t as unknown as { jugador_id: string }).jugador_id ?? "")] ?? 0) + 1;
-    setTecMap(map);
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [pin, mes, fecha]);
 
