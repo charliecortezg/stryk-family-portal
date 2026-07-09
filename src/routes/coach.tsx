@@ -295,7 +295,7 @@ function ListaDia({ pin, mes, semana, fecha }: { pin: string; mes: string; seman
           const avg = completoActitud
             ? ((r.esfuerzo! + r.aplicacion_tactica! + r.trabajo_equipo! + r.comunicacion!) / 4).toFixed(1)
             : null;
-          const tecEstado = semana === 4 ? "no aplica" : "pendiente";
+          const tecEstado = "pendiente";
 
           return (
             <div key={r.jugador_id} className="card-elevated rounded-2xl p-4 relative">
