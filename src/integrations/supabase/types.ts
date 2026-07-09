@@ -14,13 +14,462 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      config: {
+        Row: {
+          id: number
+          mes_activo: string
+          password_admin: string
+          pin_coach: string
+          semana_activa: number
+        }
+        Insert: {
+          id?: number
+          mes_activo?: string
+          password_admin?: string
+          pin_coach?: string
+          semana_activa?: number
+        }
+        Update: {
+          id?: number
+          mes_activo?: string
+          password_admin?: string
+          pin_coach?: string
+          semana_activa?: number
+        }
+        Relationships: []
+      }
+      evaluaciones_diarias: {
+        Row: {
+          aplicacion_tactica: number | null
+          asistencia: string
+          comunicacion: number | null
+          created_at: string
+          esfuerzo: number | null
+          fecha: string
+          id: string
+          jugador_id: string
+          nota_coach: string | null
+          semana: number
+          trabajo_equipo: number | null
+        }
+        Insert: {
+          aplicacion_tactica?: number | null
+          asistencia: string
+          comunicacion?: number | null
+          created_at?: string
+          esfuerzo?: number | null
+          fecha: string
+          id?: string
+          jugador_id: string
+          nota_coach?: string | null
+          semana: number
+          trabajo_equipo?: number | null
+        }
+        Update: {
+          aplicacion_tactica?: number | null
+          asistencia?: string
+          comunicacion?: number | null
+          created_at?: string
+          esfuerzo?: number | null
+          fecha?: string
+          id?: string
+          jugador_id?: string
+          nota_coach?: string | null
+          semana?: number
+          trabajo_equipo?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluaciones_diarias_jugador_id_fkey"
+            columns: ["jugador_id"]
+            isOneToOne: false
+            referencedRelation: "jugadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluaciones_tecnicas: {
+        Row: {
+          fecha: string
+          id: string
+          indicador: string
+          jugador_id: string
+          nota: string | null
+          semana: number
+          valor: number
+        }
+        Insert: {
+          fecha: string
+          id?: string
+          indicador: string
+          jugador_id: string
+          nota?: string | null
+          semana: number
+          valor: number
+        }
+        Update: {
+          fecha?: string
+          id?: string
+          indicador?: string
+          jugador_id?: string
+          nota?: string | null
+          semana?: number
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluaciones_tecnicas_jugador_id_fkey"
+            columns: ["jugador_id"]
+            isOneToOne: false
+            referencedRelation: "jugadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fotos_semanales: {
+        Row: {
+          created_at: string
+          grupo: string
+          id: string
+          imagen_url: string
+          mes: string
+          semana: number
+        }
+        Insert: {
+          created_at?: string
+          grupo: string
+          id?: string
+          imagen_url: string
+          mes: string
+          semana: number
+        }
+        Update: {
+          created_at?: string
+          grupo?: string
+          id?: string
+          imagen_url?: string
+          mes?: string
+          semana?: number
+        }
+        Relationships: []
+      }
+      jugadores: {
+        Row: {
+          activo: boolean
+          codigo_familia: string
+          created_at: string
+          grupo: string
+          id: string
+          mes: string
+          nombre: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo_familia: string
+          created_at?: string
+          grupo: string
+          id?: string
+          mes: string
+          nombre: string
+        }
+        Update: {
+          activo?: boolean
+          codigo_familia?: string
+          created_at?: string
+          grupo?: string
+          id?: string
+          mes?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      logros: {
+        Row: {
+          desbloqueado: boolean
+          fecha_desbloqueo: string | null
+          id: string
+          jugador_id: string
+          logro_codigo: string
+        }
+        Insert: {
+          desbloqueado?: boolean
+          fecha_desbloqueo?: string | null
+          id?: string
+          jugador_id: string
+          logro_codigo: string
+        }
+        Update: {
+          desbloqueado?: boolean
+          fecha_desbloqueo?: string | null
+          id?: string
+          jugador_id?: string
+          logro_codigo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logros_jugador_id_fkey"
+            columns: ["jugador_id"]
+            isOneToOne: false
+            referencedRelation: "jugadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reportes: {
+        Row: {
+          fecha_publicacion: string | null
+          id: string
+          jugador_id: string
+          mensaje_coach: string
+          publicado: boolean
+        }
+        Insert: {
+          fecha_publicacion?: string | null
+          id?: string
+          jugador_id: string
+          mensaje_coach?: string
+          publicado?: boolean
+        }
+        Update: {
+          fecha_publicacion?: string | null
+          id?: string
+          jugador_id?: string
+          mensaje_coach?: string
+          publicado?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reportes_jugador_id_fkey"
+            columns: ["jugador_id"]
+            isOneToOne: true
+            referencedRelation: "jugadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      actualizar_config: {
+        Args: {
+          p_mes_activo: string
+          p_pass: string
+          p_password_admin: string
+          p_pin_coach: string
+          p_semana_activa: number
+        }
+        Returns: undefined
+      }
+      crear_jugador: {
+        Args: {
+          p_grupo: string
+          p_mes: string
+          p_nombre: string
+          p_pass: string
+        }
+        Returns: {
+          activo: boolean
+          codigo_familia: string
+          created_at: string
+          grupo: string
+          id: string
+          mes: string
+          nombre: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "jugadores"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      desbloquear_semana: {
+        Args: { p_jugador: string; p_pass: string; p_semana: number }
+        Returns: undefined
+      }
+      generar_codigo_familia: { Args: never; Returns: string }
+      get_config: {
+        Args: { p_pin: string }
+        Returns: {
+          id: number
+          mes_activo: string
+          password_admin: string
+          pin_coach: string
+          semana_activa: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "config"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_config_publica: {
+        Args: never
+        Returns: {
+          mes_activo: string
+          semana_activa: number
+        }[]
+      }
+      get_portal_data: { Args: { p_codigo: string }; Returns: Json }
+      get_reporte: {
+        Args: { p_jugador: string; p_pass: string }
+        Returns: {
+          fecha_publicacion: string | null
+          id: string
+          jugador_id: string
+          mensaje_coach: string
+          publicado: boolean
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "reportes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      guardar_evaluacion_diaria: {
+        Args: {
+          p_comunicacion: number
+          p_equipo: number
+          p_esfuerzo: number
+          p_fecha: string
+          p_jugador: string
+          p_nota: string
+          p_pin: string
+          p_semana: number
+          p_tactica: number
+        }
+        Returns: undefined
+      }
+      guardar_evaluacion_tecnica: {
+        Args: {
+          p_fecha: string
+          p_indicador: string
+          p_jugador: string
+          p_nota: string
+          p_pin: string
+          p_semana: number
+          p_valor: number
+        }
+        Returns: undefined
+      }
+      guardar_reporte: {
+        Args: { p_jugador: string; p_mensaje: string; p_pass: string }
+        Returns: undefined
+      }
+      listar_evaluaciones_dia: {
+        Args: { p_fecha: string; p_grupo: string; p_mes: string; p_pin: string }
+        Returns: {
+          aplicacion_tactica: number
+          asistencia: string
+          comunicacion: number
+          esfuerzo: number
+          jugador_id: string
+          nombre: string
+          nota_coach: string
+          trabajo_equipo: number
+        }[]
+      }
+      listar_jugadores: {
+        Args: {
+          p_grupo?: string
+          p_mes?: string
+          p_pin: string
+          p_solo_activos?: boolean
+        }
+        Returns: {
+          activo: boolean
+          codigo_familia: string
+          created_at: string
+          grupo: string
+          id: string
+          mes: string
+          nombre: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "jugadores"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      listar_logros: {
+        Args: { p_jugador: string; p_pin: string }
+        Returns: {
+          desbloqueado: boolean
+          fecha_desbloqueo: string | null
+          id: string
+          jugador_id: string
+          logro_codigo: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "logros"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      publicar_grupo: {
+        Args: { p_grupo: string; p_mes: string; p_pass: string }
+        Returns: undefined
+      }
+      publicar_reporte: {
+        Args: { p_jugador: string; p_pass: string; p_publicado: boolean }
+        Returns: undefined
+      }
+      registrar_asistencia: {
+        Args: {
+          p_asistencia: string
+          p_fecha: string
+          p_jugador: string
+          p_pin: string
+          p_semana: number
+        }
+        Returns: undefined
+      }
+      semaforo: {
+        Args: {
+          p_grupo: string
+          p_mes: string
+          p_pass: string
+          p_semana: number
+        }
+        Returns: {
+          asistencia: string
+          completo: boolean
+          fecha: string
+          jugador_id: string
+          nombre: string
+        }[]
+      }
+      set_activo: {
+        Args: { p_activo: boolean; p_jugador: string; p_pass: string }
+        Returns: undefined
+      }
+      subir_foto: {
+        Args: {
+          p_grupo: string
+          p_mes: string
+          p_pass: string
+          p_semana: number
+          p_url: string
+        }
+        Returns: undefined
+      }
+      toggle_logro: {
+        Args: {
+          p_codigo: string
+          p_jugador: string
+          p_pass: string
+          p_valor: boolean
+        }
+        Returns: undefined
+      }
+      verificar_admin: { Args: { p_pass: string }; Returns: boolean }
+      verificar_pin: { Args: { p_pin: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
