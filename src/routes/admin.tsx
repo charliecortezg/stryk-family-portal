@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { Logo } from "@/components/logo";
 import {
   INDICADORES_ACTITUD,
-  INDICADORES_TECNICOS,
   LOGROS_POR_SEMANA,
   MESES,
   cerrarAdmin,
