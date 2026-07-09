@@ -376,21 +376,62 @@ function SecLogros({ pass }: { pass: string }) {
 function SecReportes({ pass }: { pass: string }) {
   const [players, setPlayers] = useState<Jugador[]>([]);
   const [sel, setSel] = useState<string | null>(null);
+  const [grupoFiltro, setGrupoFiltro] = useState<"TODOS" | "A" | "B">("TODOS");
+  const [publicados, setPublicados] = useState<{ count: number; grupo: string; mes: string } | null>(null);
+  const [showCodigos, setShowCodigos] = useState(false);
 
   useEffect(() => { rpc<Jugador[]>("listar_jugadores", { p_pin: pass }).then(setPlayers); }, [pass]);
+
+  const filtered = players.filter((p) => grupoFiltro === "TODOS" || p.grupo === grupoFiltro);
 
   const publicarGrupo = async (grupo: string, mes: string) => {
     if (!confirm(`Publicar TODOS los reportes de Grupo ${grupo}·${mes}?`)) return;
     await rpc("publicar_grupo", { p_pass: pass, p_grupo: grupo, p_mes: mes });
-    toast.success("Reportes publicados");
+    const count = players.filter((p) => p.grupo === grupo && p.mes === mes).length;
+    setPublicados({ count, grupo, mes });
+    setShowCodigos(false);
   };
 
   return (
     <div>
       <h1 className="text-2xl font-display mb-6 no-print">Reportes</h1>
+      {publicados && (
+        <div className="mb-4 rounded-xl bg-success/15 border border-success/40 p-4 no-print flex flex-wrap items-center gap-3 justify-between animate-fade-in">
+          <div className="text-sm">
+            <span className="font-display text-success">{publicados.count} reportes publicados.</span>{" "}
+            <span className="text-muted-foreground">Comparte los links con las familias.</span>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setShowCodigos((s) => !s)} className="text-xs px-3 py-2 rounded-lg bg-gold text-gold-foreground font-semibold">
+              {showCodigos ? "Ocultar códigos" : "Ver códigos"}
+            </button>
+            <button onClick={() => setPublicados(null)} className="text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10">Cerrar</button>
+          </div>
+          {showCodigos && (
+            <div className="w-full mt-2 pt-3 border-t border-white/10 grid sm:grid-cols-2 gap-2">
+              {players.filter((p) => p.grupo === publicados.grupo && p.mes === publicados.mes).map((p) => (
+                <div key={p.id} className="flex items-center justify-between gap-2 text-sm bg-background/50 rounded-lg px-3 py-2">
+                  <span>{p.nombre}</span>
+                  <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/progreso/${p.codigo_familia}`); toast.success("Link copiado"); }} className="font-mono text-gold text-xs hover:underline">
+                    {p.codigo_familia}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <div className="grid lg:grid-cols-[280px_1fr] gap-6">
         <div className="rounded-2xl bg-surface border border-white/5 p-2 h-fit max-h-[70vh] overflow-y-auto no-print">
-          {players.map((p) => (
+          <div className="p-2 flex gap-1">
+            {(["TODOS", "A", "B"] as const).map((g) => (
+              <button key={g} onClick={() => setGrupoFiltro(g)}
+                className={`flex-1 text-xs px-2 py-1 rounded-lg ${grupoFiltro === g ? "bg-gold text-gold-foreground" : "bg-white/5"}`}>
+                {g === "TODOS" ? "Todos" : `Grupo ${g}`}
+              </button>
+            ))}
+          </div>
+          {filtered.map((p) => (
             <button key={p.id} onClick={() => setSel(p.id)} className={`w-full text-left px-3 py-2 rounded-lg ${sel === p.id ? "bg-gold text-gold-foreground" : "hover:bg-white/5"}`}>
               {p.nombre}<span className="text-xs opacity-60 ml-2">{p.grupo}·{p.mes}</span>
             </button>
