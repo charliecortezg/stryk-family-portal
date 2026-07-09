@@ -222,11 +222,22 @@ function NuevoJugadorModal({ pass, onClose, onSaved }: { pass: string; onClose: 
 // ---------------- Semaforo ----------------
 function SecSemaforo({ pass }: { pass: string }) {
   const [f, setF] = useState({ grupo: "A", mes: "julio", semana: 1 });
-  const [rows, setRows] = useState<{ jugador_id: string; nombre: string; fecha: string | null; asistencia: string | null; completo: boolean }[]>([]);
+  const [rowsA, setRowsA] = useState<{ jugador_id: string; nombre: string; fecha: string | null; asistencia: string | null; completo: boolean }[]>([]);
+  const [rowsB, setRowsB] = useState<{ jugador_id: string; nombre: string; fecha: string | null; asistencia: string | null; completo: boolean }[]>([]);
 
   useEffect(() => {
-    rpc<typeof rows>("semaforo", { p_pass: pass, p_grupo: f.grupo, p_mes: f.mes, p_semana: f.semana }).then(setRows);
+    if (f.grupo === "TODOS") {
+      Promise.all([
+        rpc<typeof rowsA>("semaforo", { p_pass: pass, p_grupo: "A", p_mes: f.mes, p_semana: f.semana }),
+        rpc<typeof rowsA>("semaforo", { p_pass: pass, p_grupo: "B", p_mes: f.mes, p_semana: f.semana }),
+      ]).then(([a, b]) => { setRowsA(a); setRowsB(b); });
+    } else {
+      rpc<typeof rowsA>("semaforo", { p_pass: pass, p_grupo: f.grupo, p_mes: f.mes, p_semana: f.semana })
+        .then((r) => { setRowsA(r); setRowsB([]); });
+    }
   }, [pass, f]);
+
+  const rows = f.grupo === "TODOS" ? [...rowsA, ...rowsB] : rowsA;
 
   const jugadores = useMemo(() => {
     const map = new Map<string, { nombre: string; dias: Record<string, { asistencia: string | null; completo: boolean }> }>();
@@ -234,7 +245,7 @@ function SecSemaforo({ pass }: { pass: string }) {
       if (!map.has(r.jugador_id)) map.set(r.jugador_id, { nombre: r.nombre, dias: {} });
       if (r.fecha) map.get(r.jugador_id)!.dias[r.fecha] = { asistencia: r.asistencia, completo: r.completo };
     }
-    return Array.from(map.entries());
+    return Array.from(map.entries()).sort((a, b) => a[1].nombre.localeCompare(b[1].nombre));
   }, [rows]);
 
   const fechas = fechasDeSemana(f.mes, f.semana);
@@ -252,6 +263,7 @@ function SecSemaforo({ pass }: { pass: string }) {
       <h1 className="text-2xl font-display mb-6">Semáforo de registro</h1>
       <div className="flex flex-wrap gap-3 mb-4">
         <select value={f.grupo} onChange={(e) => setF({ ...f, grupo: e.target.value })} className="h-10 px-3 rounded-xl bg-surface border border-white/10">
+          <option value="TODOS">Todos</option>
           <option value="A">Grupo A</option><option value="B">Grupo B</option>
         </select>
         <select value={f.mes} onChange={(e) => setF({ ...f, mes: e.target.value })} className="h-10 px-3 rounded-xl bg-surface border border-white/10 capitalize">
