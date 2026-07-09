@@ -21,7 +21,7 @@ export const Route = createFileRoute("/progreso/$codigo")({
   component: Portal,
 });
 
-type Portal = {
+type PortalData = {
   jugador: { id: string; nombre: string; grupo: "A" | "B"; mes: string };
   config: { mes_activo: string; semana_activa: number };
   diarias: { fecha: string; semana: number; asistencia: string; esfuerzo: number | null; aplicacion_tactica: number | null; trabajo_equipo: number | null; comunicacion: number | null }[];
@@ -33,10 +33,10 @@ type Portal = {
 
 function Portal() {
   const { codigo } = Route.useParams();
-  const [data, setData] = useState<Portal | null | undefined>(undefined);
+  const [data, setData] = useState<PortalData | null | undefined>(undefined);
 
   useEffect(() => {
-    rpc<Portal | null>("get_portal_data", { p_codigo: codigo }).then(setData).catch(() => setData(null));
+    rpc<PortalData | null>("get_portal_data", { p_codigo: codigo }).then(setData).catch(() => setData(null));
   }, [codigo]);
 
   if (data === undefined) {
