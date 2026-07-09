@@ -33,7 +33,7 @@ type EvalRow = {
 
 type Cfg = { mes_activo: string; semana_activa: number };
 type Logro = { logro_codigo: string; desbloqueado: boolean };
-type TecnicaRow = { semana: number; indicador: string; valor: number };
+
 
 function CoachPage() {
   const [pin, setPin] = useState<string | null>(null);
