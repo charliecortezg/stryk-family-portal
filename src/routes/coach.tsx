@@ -88,31 +88,87 @@ function PinScreen({ onOk }: { onOk: (pin: string) => void }) {
   );
 }
 
+const NOMBRES_SEMANA: Record<number, string> = {
+  1: "Fundamentos",
+  2: "Conexión y definición",
+  3: "Habilidad individual",
+  4: "Pressing + tercer hombre",
+};
+
+const INICIOS_MES: Record<string, string> = {
+  junio: "2026-06-08",
+  julio: "2026-07-06",
+  agosto: "2026-08-03",
+};
+
+function semanaRealHoy(mes: string, hoy: string): number | null {
+  const inicio = INICIOS_MES[mes.toLowerCase()];
+  if (!inicio) return null;
+  const d1 = new Date(inicio + "T00:00:00");
+  const d2 = new Date(hoy + "T00:00:00");
+  const dias = Math.floor((d2.getTime() - d1.getTime()) / 86400000);
+  if (dias < 0) return null;
+  const s = Math.floor(dias / 7) + 1;
+  return s >= 1 && s <= 4 ? s : null;
+}
+
 function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
   const [tab, setTab] = useState<"lista" | "resumen">("lista");
   const [cfg, setCfg] = useState<Cfg | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [confirmSem, setConfirmSem] = useState<number | null>(null);
+  const [cambiando, setCambiando] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const hoy = tijuanaHoy();
 
-  useEffect(() => {
-    rpc<Cfg[]>("get_config_publica", {}).then((r) => setCfg(r[0]));
-  }, []);
+  const loadCfg = () => rpc<Cfg[]>("get_config_publica", {}).then((r) => setCfg(r[0]));
+  useEffect(() => { loadCfg(); }, []);
 
   if (!cfg) return <SkeletonScreen />;
+
+  const semReal = semanaRealHoy(cfg.mes_activo, hoy);
+  const desalineada = semReal !== null && semReal !== cfg.semana_activa;
+
+  const confirmarCambio = async () => {
+    if (confirmSem == null) return;
+    setCambiando(true);
+    try {
+      await rpc("cambiar_semana", { p_pin: pin, p_semana: confirmSem });
+      toast.success(`Semana ${confirmSem} activa`);
+      setConfirmSem(null);
+      setSheetOpen(false);
+      await loadCfg();
+      setReloadKey((k) => k + 1);
+    } catch (e) { toast.error(String(e)); }
+    finally { setCambiando(false); }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Logo variant="mark" size={28} />
-          <div>
-            <div className="font-display text-sm capitalize">{cfg.mes_activo} · Semana {cfg.semana_activa}</div>
-            <div className="text-xs text-muted-foreground">Coach</div>
-          </div>
+          <button onClick={() => setSheetOpen(true)} className="text-left active:opacity-70 transition-opacity">
+            <div className="font-display text-sm capitalize flex items-center gap-1">
+              {cfg.mes_activo} · Semana {cfg.semana_activa}
+              <span className="text-gold text-xs">▾</span>
+            </div>
+            <div className="text-xs text-muted-foreground">Coach · toca para cambiar</div>
+          </button>
         </div>
         <button onClick={onLogout} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Salir</button>
       </header>
 
-      <div className="animate-fade-in">
+      {desalineada && (
+        <div className="animate-fade-in">
+          <div className="h-[2px] w-full bg-gold" />
+          <div className="px-4 py-2 text-[11px] text-gold/90 bg-gold/5">
+            ⚠ Semana activa: {cfg.semana_activa} · Semana real de hoy: {semReal} · Ajusta si es necesario
+          </div>
+        </div>
+      )}
+
+      <div className="animate-fade-in" key={reloadKey}>
         {tab === "lista" && <ListaDia pin={pin} mes={cfg.mes_activo} semana={cfg.semana_activa} fecha={hoy} />}
         {tab === "resumen" && <ResumenTab pin={pin} mes={cfg.mes_activo} fecha={hoy} />}
       </div>
@@ -125,6 +181,53 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
           </button>
         ))}
       </nav>
+
+      {sheetOpen && (
+        <div className="fixed inset-0 z-30 flex items-end" onClick={() => setSheetOpen(false)}>
+          <div className="absolute inset-0 bg-black/60 animate-fade-in" />
+          <div onClick={(e) => e.stopPropagation()}
+            className="relative w-full bg-surface border-t border-white/10 rounded-t-3xl p-5 pb-8 animate-scale-in">
+            <div className="mx-auto w-10 h-1 rounded-full bg-white/20 mb-4" />
+            <div className="text-xs uppercase tracking-widest text-muted-foreground text-center mb-4">Semana activa</div>
+            <div className="space-y-2">
+              {[1, 2, 3, 4].map((s) => {
+                const activa = cfg.semana_activa === s;
+                return (
+                  <button key={s} onClick={() => !activa && setConfirmSem(s)}
+                    className={`w-full flex items-center gap-3 rounded-xl p-4 text-left transition-all active:scale-[0.98] ${
+                      activa ? "border border-gold bg-gold/10" : "border border-white/10 bg-background"
+                    }`}>
+                    <span className={`font-display text-lg w-24 ${activa ? "text-gold" : ""}`}>Semana {s}</span>
+                    <span className="text-sm text-muted-foreground flex-1">{NOMBRES_SEMANA[s]}</span>
+                    {activa && <span className="text-gold text-xs">● activa</span>}
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={() => setSheetOpen(false)}
+              className="mt-5 w-full h-12 rounded-xl border border-white/10 text-sm">Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {confirmSem !== null && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-6" onClick={() => !cambiando && setConfirmSem(null)}>
+          <div className="absolute inset-0 bg-black/70 animate-fade-in" />
+          <div onClick={(e) => e.stopPropagation()}
+            className="relative card-elevated rounded-2xl p-6 max-w-sm w-full animate-scale-in">
+            <h3 className="font-display text-lg">¿Cambiar a Semana {confirmSem}?</h3>
+            <p className="text-sm text-muted-foreground mt-2">Esto afecta todas las evaluaciones del día.</p>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button disabled={cambiando} onClick={() => setConfirmSem(null)}
+                className="h-12 rounded-xl border border-white/10 text-sm disabled:opacity-40">Cancelar</button>
+              <button disabled={cambiando} onClick={confirmarCambio}
+                className="h-12 rounded-xl bg-gold text-gold-foreground font-semibold text-sm disabled:opacity-40">
+                {cambiando ? "..." : "Sí, cambiar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
