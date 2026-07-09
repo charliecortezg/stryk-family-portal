@@ -24,15 +24,17 @@ export const INDICADORES_TECNICOS: Record<string, string> = {
   conduccion: "Conducción controlada",
   pase: "Pase con precisión",
   recepcion: "Recepción limpia",
-  control_aereo: "Control aéreo",
+  control_aereo: "Control aéreo con pecho",
   remate: "Remate orientado",
 };
 
+export const TECNICAS_ORDEN = ["conduccion", "pase", "recepcion", "control_aereo", "remate"] as const;
+
 export const TECNICAS_POR_SEMANA: Record<number, string[]> = {
-  1: ["conduccion"],
+  1: ["conduccion", "pase", "recepcion", "control_aereo", "remate"],
   2: ["pase", "recepcion", "control_aereo", "remate"],
   3: ["conduccion"],
-  4: [],
+  4: ["conduccion", "pase", "recepcion", "control_aereo", "remate"],
 };
 
 export interface LogroDef {
