@@ -344,6 +344,9 @@ function AsistBtn({ active, onClick, color, label }: { active: boolean; onClick:
   );
 }
 
+type HistDiaria = { fecha: string; semana: number; asistencia: string | null; esfuerzo: number | null; aplicacion_tactica: number | null; trabajo_equipo: number | null; comunicacion: number | null; nota_coach: string | null };
+type HistTecnica = { semana: number; indicador: string; valor: number };
+
 function IndividualEval({
   pin, semana, fecha, rows, idx, onClose, onNav,
 }: {
@@ -361,11 +364,36 @@ function IndividualEval({
   const tecIndicadores = TECNICAS_POR_SEMANA[semana] ?? [];
   const [tecVals, setTecVals] = useState<Record<string, number>>({});
   const [logros, setLogros] = useState<Logro[]>([]);
+  const [historial, setHistorial] = useState<{ diarias: HistDiaria[]; tecnicas: HistTecnica[] } | null>(null);
+  const [histOpen, setHistOpen] = useState(false);
   const logrosSemana = LOGROS_POR_SEMANA[semana - 1]?.logros ?? [];
 
   useEffect(() => {
     rpc<Logro[]>("listar_logros_coach", { p_pin: pin, p_jugador: r.jugador_id }).then(setLogros).catch(() => {});
-  }, [pin, r.jugador_id]);
+    rpc<{ diarias: HistDiaria[]; tecnicas: HistTecnica[] }>("historial_jugador_coach", { p_pin: pin, p_jugador: r.jugador_id })
+      .then((h) => {
+        setHistorial(h);
+        // precarga valores técnicos ya registrados para esta semana
+        const yaEnSemana: Record<string, number> = {};
+        h.tecnicas.filter((t) => t.semana === semana).forEach((t) => { yaEnSemana[t.indicador] = t.valor; });
+        setTecVals(yaEnSemana);
+      })
+      .catch(() => {});
+  }, [pin, r.jugador_id, semana]);
+
+  const s1TecMap = useMemo(() => {
+    const m: Record<string, number> = {};
+    historial?.tecnicas.filter((t) => t.semana === 1).forEach((t) => { m[t.indicador] = t.valor; });
+    return m;
+  }, [historial]);
+
+  const semanasPrevias = useMemo(() => {
+    if (!historial) return [] as number[];
+    const set = new Set<number>();
+    historial.diarias.filter((d) => d.semana < semana).forEach((d) => set.add(d.semana));
+    historial.tecnicas.filter((t) => t.semana < semana).forEach((t) => set.add(t.semana));
+    return Array.from(set).sort();
+  }, [historial, semana]);
 
   const dirty = useMemo(() => JSON.stringify(vals) !== JSON.stringify({
     esfuerzo: r.esfuerzo ?? 0, aplicacion_tactica: r.aplicacion_tactica ?? 0,
@@ -413,6 +441,12 @@ function IndividualEval({
     } catch (e) { toast.error(String(e)); }
   };
 
+  const chipTec = semana === 1
+    ? { txt: "📊 BASELINE — Punto de partida", cls: "bg-blue-500/15 text-blue-300 border-blue-500/40" }
+    : semana === 4
+      ? { txt: "📊 COMPARATIVO FINAL — Se compara con S1", cls: "bg-gold/15 text-gold border-gold/40" }
+      : { txt: "Evaluación intermedia", cls: "bg-white/5 text-muted-foreground border-white/10" };
+
   return (
     <div className="p-4 pb-32 max-w-lg mx-auto animate-scale-in">
       <div className="flex items-center justify-between mb-4">
@@ -421,6 +455,46 @@ function IndividualEval({
         <button onClick={() => navegar(1)} disabled={idx === rows.length - 1} className="text-sm disabled:opacity-30">Siguiente →</button>
       </div>
       <h2 className="text-3xl font-display">{r.nombre}</h2>
+
+      {/* HISTORIAL */}
+      {semanasPrevias.length > 0 && (
+        <div className="mt-4 rounded-xl border border-white/10 bg-surface overflow-hidden">
+          <button onClick={() => setHistOpen((o) => !o)} className="w-full flex items-center justify-between px-4 py-3 text-sm">
+            <span>📈 Ver historial (Semana{semanasPrevias.length > 1 ? "s" : ""} {semanasPrevias.join(", ")})</span>
+            <span className="text-muted-foreground">{histOpen ? "▴" : "▾"}</span>
+          </button>
+          {histOpen && historial && (
+            <div className="px-4 pb-4 space-y-4 border-t border-white/5 animate-fade-in">
+              {semanasPrevias.map((sp) => {
+                const dsem = historial.diarias.filter((d) => d.semana === sp && d.asistencia !== "ausente");
+                const avg = (k: keyof HistDiaria) => {
+                  const vs = dsem.map((d) => d[k]).filter((v): v is number => typeof v === "number");
+                  return vs.length ? (vs.reduce((a, b) => a + b, 0) / vs.length).toFixed(1) : "—";
+                };
+                const tsem = historial.tecnicas.filter((t) => t.semana === sp);
+                return (
+                  <div key={sp} className="text-xs">
+                    <div className="uppercase tracking-widest text-muted-foreground mb-1">Semana {sp}</div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                      <div>Esfuerzo: <span className="text-foreground">{avg("esfuerzo")}</span></div>
+                      <div>Táctica: <span className="text-foreground">{avg("aplicacion_tactica")}</span></div>
+                      <div>Equipo: <span className="text-foreground">{avg("trabajo_equipo")}</span></div>
+                      <div>Comunicación: <span className="text-foreground">{avg("comunicacion")}</span></div>
+                    </div>
+                    {tsem.length > 0 && (
+                      <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                        {tsem.map((t) => (
+                          <div key={t.indicador}>{INDICADORES_TECNICOS[t.indicador]}: <span className="text-foreground">{t.valor}/5</span></div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ACTITUD */}
       <SectionTitle>Actitud (diario)</SectionTitle>
@@ -444,15 +518,30 @@ function IndividualEval({
 
       {/* TÉCNICA */}
       <SectionTitle>Técnica (semana {semana})</SectionTitle>
-      {semana === 4 ? (
-        <div className="rounded-xl border border-gold/40 bg-gold/10 p-4 text-sm text-gold">
-          Semana 4 — Sin evaluación técnica individual. El foco es colectivo. Completa la evaluación final el jueves.
-        </div>
-      ) : (
-        <div className="space-y-5">
-          {tecIndicadores.map((ind) => (
+      <div className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium mb-4 ${chipTec.cls}`}>
+        {chipTec.txt}
+      </div>
+      <div className="space-y-5">
+        {tecIndicadores.map((ind) => {
+          const s1 = s1TecMap[ind];
+          const cur = tecVals[ind];
+          let deltaEl: React.ReactNode = null;
+          if (semana > 1 && s1 != null) {
+            if (cur && cur >= 1) {
+              const diff = cur - s1;
+              const cls = diff > 0 ? "text-success" : diff < 0 ? "text-destructive" : "text-warning";
+              const arrow = diff > 0 ? "↑" : diff < 0 ? "↓" : "=";
+              deltaEl = <span className={`ml-2 ${cls}`}>(S1: {s1} → {cur} {arrow})</span>;
+            } else {
+              deltaEl = <span className="ml-2 text-muted-foreground">(S1: {s1})</span>;
+            }
+          }
+          return (
             <div key={ind}>
-              <div className="text-sm font-medium mb-2">{INDICADORES_TECNICOS[ind]}</div>
+              <div className="text-sm font-medium mb-2">
+                {INDICADORES_TECNICOS[ind]}
+                {deltaEl}
+              </div>
               <div className="grid grid-cols-5 gap-2">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button key={n} onClick={() => setTecVals((v) => ({ ...v, [ind]: n }))}
@@ -462,9 +551,9 @@ function IndividualEval({
                 ))}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
 
       {/* LOGROS */}
       <SectionTitle>Logros de la semana</SectionTitle>
