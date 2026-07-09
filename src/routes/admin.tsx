@@ -518,12 +518,33 @@ function ReporteImprimible({ jugador, data, mensaje, publicado }: { jugador: Jug
   const total = data.diarias.length;
   const desbloqueados = data.logros.filter((l) => l.desbloqueado).length;
 
-  const arrow = (a: number | null, b: number | null) => {
-    if (a == null || b == null) return "—";
-    if (b > a) return "↑";
-    if (b < a) return "↓";
-    return "=";
+  const cambioActitud = (a: number | null, b: number | null) => {
+    if (a == null || b == null) return { txt: "Sin comparativo", cls: "text-muted-foreground" };
+    const d = b - a;
+    const sign = d > 0 ? "+" : "";
+    const arrow = d > 0 ? "↑" : d < 0 ? "↓" : "=";
+    const cls = d > 0 ? "text-success" : d < 0 ? "text-destructive" : "text-warning";
+    return { txt: `${sign}${d.toFixed(1)} ${arrow}`, cls };
   };
+  const cambioTec = (a: number | null, b: number | null) => {
+    if (a == null || b == null) return { txt: "Sin comparativo", cls: "text-muted-foreground" };
+    const d = b - a;
+    const sign = d > 0 ? "+" : "";
+    const arrow = d > 0 ? "↑" : d < 0 ? "↓" : "=";
+    const cls = d > 0 ? "text-success" : d < 0 ? "text-destructive" : "text-warning";
+    return { txt: `${sign}${d} ${arrow}`, cls };
+  };
+  const tecVal = (semana: number, ind: string) => {
+    const row = data.tecnicas.find((t) => t.semana === semana && t.indicador === ind);
+    return row ? row.valor : null;
+  };
+  const indTec: [string, string][] = [
+    ["conduccion", "Conducción controlada"],
+    ["pase", "Pase con precisión"],
+    ["recepcion", "Recepción limpia"],
+    ["control_aereo", "Control aéreo con pecho"],
+    ["remate", "Remate orientado"],
+  ];
 
   return (
     <div className="print-page bg-surface border border-white/5 rounded-2xl p-6 text-sm">
@@ -536,40 +557,41 @@ function ReporteImprimible({ jugador, data, mensaje, publicado }: { jugador: Jug
       </div>
       <h2 className="text-2xl font-display">{jugador.nombre}</h2>
 
-      <h3 className="mt-6 font-display text-sm uppercase tracking-widest text-muted-foreground">Actitud — Semana 1 vs Semana 4</h3>
-      <table className="w-full mt-2 border-collapse">
+      <h3 className="mt-6 font-display text-sm uppercase tracking-widest text-muted-foreground">Comparativo S1 → S4</h3>
+      <table className="w-full mt-2 border-collapse text-sm">
         <thead className="text-xs text-muted-foreground">
-          <tr><th className="text-left py-2">Indicador</th><th>Sem 1</th><th>Sem 4</th><th></th></tr>
+          <tr><th className="text-left py-2">Indicador</th><th className="text-center">S1</th><th className="text-center">S4</th><th className="text-center">Cambio</th></tr>
         </thead>
         <tbody>
+          <tr><td colSpan={4} className="pt-3 pb-1 text-xs uppercase tracking-widest text-gold">Actitud (promedio del mes)</td></tr>
           {INDICADORES_ACTITUD.map((ind) => {
             const a = s1[ind.key as keyof typeof s1]; const b = s4[ind.key as keyof typeof s4];
+            const c = cambioActitud(a, b);
             return (
               <tr key={ind.key} className="border-t border-white/5">
                 <td className="py-2">{ind.label}</td>
                 <td className="text-center">{a?.toFixed(1) ?? "—"}</td>
                 <td className="text-center">{b?.toFixed(1) ?? "—"}</td>
-                <td className="text-center text-gold">{arrow(a, b)}</td>
+                <td className={`text-center ${c.cls}`}>{c.txt}</td>
+              </tr>
+            );
+          })}
+          <tr><td colSpan={4} className="pt-4 pb-1 text-xs uppercase tracking-widest text-gold">Técnica</td></tr>
+          {indTec.map(([key, label]) => {
+            const a = tecVal(1, key); const b = tecVal(4, key);
+            const c = cambioTec(a, b);
+            return (
+              <tr key={key} className="border-t border-white/5">
+                <td className="py-2">{label}</td>
+                <td className="text-center">{a ?? "—"}</td>
+                <td className="text-center">{b ?? "—"}</td>
+                <td className={`text-center ${c.cls}`}>{c.txt}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
 
-      <h3 className="mt-6 font-display text-sm uppercase tracking-widest text-muted-foreground">Habilidades técnicas</h3>
-      <table className="w-full mt-2 border-collapse">
-        <thead className="text-xs text-muted-foreground"><tr><th className="text-left">Semana</th><th className="text-left">Indicador</th><th>Valor</th></tr></thead>
-        <tbody>
-          {data.tecnicas.map((t, i) => (
-            <tr key={i} className="border-t border-white/5">
-              <td className="py-1">S{t.semana}</td>
-              <td>{INDICADORES_TECNICOS[t.indicador]}</td>
-              <td className="text-center">{t.valor}/5</td>
-            </tr>
-          ))}
-          {!data.tecnicas.length && <tr><td colSpan={3} className="py-2 text-muted-foreground text-center">Sin evaluaciones técnicas</td></tr>}
-        </tbody>
-      </table>
 
       <div className="mt-6 grid grid-cols-2 gap-4">
         <div>
