@@ -58,7 +58,7 @@ function Portal() {
   return <PortalContent data={data} />;
 }
 
-function PortalContent({ data }: { data: Portal }) {
+function PortalContent({ data }: { data: PortalData }) {
   const { jugador, config, diarias, tecnicas, logros, foto, reporte } = data;
   const semanas = Array.from(new Set(diarias.map((d) => d.semana))).sort();
   const fechasSem = fechasDeSemana(jugador.mes, config.semana_activa);
