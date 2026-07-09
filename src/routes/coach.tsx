@@ -192,11 +192,7 @@ function ListaDia({ pin, mes, semana, fecha }: { pin: string; mes: string; seman
           const avg = completoActitud
             ? ((r.esfuerzo! + r.aplicacion_tactica! + r.trabajo_equipo! + r.comunicacion!) / 4).toFixed(1)
             : null;
-          const tecCount = tecMap[r.jugador_id] ?? 0;
-          const tecExpected = TECNICAS_POR_SEMANA[semana]?.length ?? 0;
-          const tecEstado = semana === 4 ? "no aplica"
-            : tecCount === 0 ? "pendiente"
-            : tecCount >= tecExpected ? "completa" : `${tecCount}/${tecExpected}`;
+          const tecEstado = semana === 4 ? "no aplica" : "pendiente";
 
           return (
             <div key={r.jugador_id} className="card-elevated rounded-2xl p-4 relative">
