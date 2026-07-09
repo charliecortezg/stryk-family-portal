@@ -262,6 +262,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      cambiar_semana: {
+        Args: { p_pin: string; p_semana: number }
+        Returns: undefined
+      }
       crear_jugador: {
         Args: {
           p_grupo: string
