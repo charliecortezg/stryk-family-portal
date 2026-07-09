@@ -412,6 +412,22 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      listar_logros_coach: {
+        Args: { p_jugador: string; p_pin: string }
+        Returns: {
+          desbloqueado: boolean
+          fecha_desbloqueo: string | null
+          id: string
+          jugador_id: string
+          logro_codigo: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "logros"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       publicar_grupo: {
         Args: { p_grupo: string; p_mes: string; p_pass: string }
         Returns: undefined
@@ -464,6 +480,15 @@ export type Database = {
           p_codigo: string
           p_jugador: string
           p_pass: string
+          p_valor: boolean
+        }
+        Returns: undefined
+      }
+      toggle_logro_coach: {
+        Args: {
+          p_codigo: string
+          p_jugador: string
+          p_pin: string
           p_valor: boolean
         }
         Returns: undefined
