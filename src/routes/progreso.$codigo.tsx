@@ -49,7 +49,7 @@ function Portal() {
           <Logo variant="mark" size={40} className="mx-auto text-slate-800" />
           <h1 className="mt-4 font-display text-2xl">Código no encontrado</h1>
           <p className="mt-2 text-sm text-muted-foreground">Verifica el código que te entregó tu coach.</p>
-          <Link to="/" className="mt-6 inline-block text-sm text-gold hover:underline">Volver al inicio</Link>
+          <Link to="/" className="mt-6 inline-block h-10 px-5 rounded-xl bg-gold text-gold-foreground text-sm font-semibold leading-10">Ir al inicio</Link>
         </div>
       </div>
     );
