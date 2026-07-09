@@ -211,8 +211,10 @@ function PortalContent({ data }: { data: PortalData }) {
         {reporte && (
           <section className="rounded-2xl bg-card shadow-sm p-5 border-2 border-[#DDA82D]">
             <div className="text-xs uppercase tracking-widest text-[#DDA82D]">Reporte final</div>
-            <h2 className="font-display text-xl mt-1">Mensaje del coach</h2>
-            <p className="mt-3 text-sm leading-relaxed whitespace-pre-line">{reporte.mensaje}</p>
+            <h2 className="font-display text-xl mt-1">Comparativo S1 → S4</h2>
+            <ComparativoTable diarias={diarias} tecnicas={tecnicas} />
+            <h3 className="mt-6 font-display text-base">Mensaje del coach</h3>
+            <p className="mt-2 text-sm leading-relaxed whitespace-pre-line">{reporte.mensaje}</p>
             <div className="mt-4 text-xs text-muted-foreground">
               Reporte generado el {new Date(reporte.fecha).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })}
             </div>
