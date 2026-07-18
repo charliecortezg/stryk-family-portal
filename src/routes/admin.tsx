@@ -589,7 +589,7 @@ function ReporteImprimible({ jugador, data, mensaje, publicado }: { jugador: Jug
 // ---------------- Config ----------------
 function SecConfig({ pass }: { pass: string }) {
   const [cfg, setCfg] = useState<ConfigRow | null>(null);
-  const [foto, setFoto] = useState({ grupo: "A", mes: "julio", semana: 1, url: "" });
+  const [foto, setFoto] = useState({ mes: "julio", semana: 1, url: "" });
 
   useEffect(() => { rpc<ConfigRow[]>("get_config", { p_pin: pass }).then((r) => setCfg(r[0])); }, [pass]);
 
