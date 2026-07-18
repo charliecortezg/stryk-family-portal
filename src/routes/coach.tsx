@@ -31,7 +31,7 @@ type EvalRow = {
   nota_coach: string | null;
 };
 
-type Cfg = { mes_activo: string; semana_activa: number };
+type Cfg = { mes_activo: string; semana_activa: number; fecha_inicio: string };
 type Logro = { logro_codigo: string; desbloqueado: boolean };
 
 
