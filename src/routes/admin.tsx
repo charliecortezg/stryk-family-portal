@@ -176,13 +176,13 @@ function SecJugadores({ pass }: { pass: string }) {
 }
 
 function NuevoJugadorModal({ pass, onClose, onSaved }: { pass: string; onClose: () => void; onSaved: () => void }) {
-  const [f, setF] = useState({ nombre: "", grupo: "A", mes: "julio" });
+  const [f, setF] = useState({ nombre: "", mes: "julio" });
   const [loading, setLoading] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await rpc("crear_jugador", { p_pass: pass, p_nombre: f.nombre, p_grupo: f.grupo, p_mes: f.mes });
+      await rpc("crear_jugador", { p_pass: pass, p_nombre: f.nombre, p_grupo: "V26", p_mes: f.mes });
       toast.success("Jugador creado");
       onSaved();
     } catch (e) { toast.error(String(e)); } finally { setLoading(false); }
@@ -193,20 +193,11 @@ function NuevoJugadorModal({ pass, onClose, onSaved }: { pass: string; onClose: 
         <h2 className="text-lg font-display">Nuevo jugador</h2>
         <label className="block mt-4 text-xs uppercase tracking-widest text-muted-foreground">Nombre</label>
         <input required value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-background border border-white/10" />
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-muted-foreground">Grupo</label>
-            <select value={f.grupo} onChange={(e) => setF({ ...f, grupo: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-background border border-white/10">
-              <option value="A">A · 8-9 años</option>
-              <option value="B">B · 10-11 años</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-muted-foreground">Mes</label>
-            <select value={f.mes} onChange={(e) => setF({ ...f, mes: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-background border border-white/10 capitalize">
-              {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
+        <div className="mt-4">
+          <label className="block text-xs uppercase tracking-widest text-muted-foreground">Mes</label>
+          <select value={f.mes} onChange={(e) => setF({ ...f, mes: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-background border border-white/10 capitalize">
+            {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
         </div>
         <div className="mt-6 flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="h-11 px-4 rounded-xl bg-white/5">Cancelar</button>
