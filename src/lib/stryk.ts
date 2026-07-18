@@ -113,7 +113,7 @@ export function fechaLarga(iso: string): string {
 // Fechas de cada semana por mes (lunes-viernes)
 const MES_INICIO: Record<string, [number, number, number]> = {
   junio: [2026, 6, 1],
-  julio: [2026, 7, 6],
+  julio: [2026, 7, 20],
   agosto: [2026, 8, 3],
 };
 
