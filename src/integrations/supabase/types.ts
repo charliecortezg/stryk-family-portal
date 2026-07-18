@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       config: {
         Row: {
+          fecha_inicio: string
           id: number
           mes_activo: string
           password_admin: string
@@ -23,6 +24,7 @@ export type Database = {
           semana_activa: number
         }
         Insert: {
+          fecha_inicio?: string
           id?: number
           mes_activo?: string
           password_admin?: string
@@ -30,6 +32,7 @@ export type Database = {
           semana_activa?: number
         }
         Update: {
+          fecha_inicio?: string
           id?: number
           mes_activo?: string
           password_admin?: string
@@ -254,6 +257,7 @@ export type Database = {
     Functions: {
       actualizar_config: {
         Args: {
+          p_fecha_inicio?: string
           p_mes_activo: string
           p_pass: string
           p_password_admin: string
@@ -297,6 +301,7 @@ export type Database = {
       get_config: {
         Args: { p_pin: string }
         Returns: {
+          fecha_inicio: string
           id: number
           mes_activo: string
           password_admin: string
@@ -313,6 +318,7 @@ export type Database = {
       get_config_publica: {
         Args: never
         Returns: {
+          fecha_inicio: string
           mes_activo: string
           semana_activa: number
         }[]
