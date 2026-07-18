@@ -137,7 +137,7 @@ function SecJugadores({ pass }: { pass: string }) {
           <table className="w-full text-sm">
             <thead className="bg-background/50 text-left text-muted-foreground text-xs uppercase">
               <tr>
-                <th className="px-4 py-3">Nombre</th><th className="px-4 py-3">Grupo</th>
+                <th className="px-4 py-3">Nombre</th>
                 <th className="px-4 py-3">Mes</th><th className="px-4 py-3">Código</th>
                 <th className="px-4 py-3">Estado</th><th className="px-4 py-3"></th>
               </tr>
@@ -146,7 +146,6 @@ function SecJugadores({ pass }: { pass: string }) {
               {list.map((j) => (
                 <tr key={j.id} className="border-t border-white/5">
                   <td className="px-4 py-3 font-medium">{j.nombre}</td>
-                  <td className="px-4 py-3">{j.grupo}</td>
                   <td className="px-4 py-3 capitalize">{j.mes}</td>
                   <td className="px-4 py-3 font-mono text-gold">{j.codigo_familia}</td>
                   <td className="px-4 py-3">
