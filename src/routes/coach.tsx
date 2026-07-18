@@ -31,7 +31,7 @@ type EvalRow = {
   nota_coach: string | null;
 };
 
-type Cfg = { mes_activo: string; semana_activa: number };
+type Cfg = { mes_activo: string; semana_activa: number; fecha_inicio: string };
 type Logro = { logro_codigo: string; desbloqueado: boolean };
 
 
@@ -95,21 +95,29 @@ const NOMBRES_SEMANA: Record<number, string> = {
   4: "Pressing + tercer hombre",
 };
 
-const INICIOS_MES: Record<string, string> = {
-  junio: "2026-06-08",
-  julio: "2026-07-06",
-  agosto: "2026-08-03",
-};
+function fechaLargaCorta(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "UTC", day: "numeric", month: "long",
+  }).format(date);
+}
 
-function semanaRealHoy(mes: string, hoy: string): number | null {
-  const inicio = INICIOS_MES[mes.toLowerCase()];
-  if (!inicio) return null;
-  const d1 = new Date(inicio + "T00:00:00");
+type EstadoCurso =
+  | { tipo: "antes"; inicioTexto: string }
+  | { tipo: "en_curso"; semanaReal: number }
+  | { tipo: "despues" }
+  | { tipo: "sin_fecha" };
+
+function estadoCurso(fechaInicio: string | undefined, hoy: string): EstadoCurso {
+  if (!fechaInicio) return { tipo: "sin_fecha" };
+  const d1 = new Date(fechaInicio + "T00:00:00");
   const d2 = new Date(hoy + "T00:00:00");
   const dias = Math.floor((d2.getTime() - d1.getTime()) / 86400000);
-  if (dias < 0) return null;
+  if (dias < 0) return { tipo: "antes", inicioTexto: fechaLargaCorta(fechaInicio) };
   const s = Math.floor(dias / 7) + 1;
-  return s >= 1 && s <= 4 ? s : null;
+  if (s >= 1 && s <= 4) return { tipo: "en_curso", semanaReal: s };
+  return { tipo: "despues" };
 }
 
 function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
@@ -126,8 +134,8 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
 
   if (!cfg) return <SkeletonScreen />;
 
-  const semReal = semanaRealHoy(cfg.mes_activo, hoy);
-  const desalineada = semReal !== null && semReal !== cfg.semana_activa;
+  const estado = estadoCurso(cfg.fecha_inicio, hoy);
+  const desalineada = estado.tipo === "en_curso" && estado.semanaReal !== cfg.semana_activa;
 
   const confirmarCambio = async () => {
     if (confirmSem == null) return;
@@ -142,6 +150,12 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
     } catch (e) { toast.error(String(e)); }
     finally { setCambiando(false); }
   };
+
+  const banner = estado.tipo === "antes"
+    ? `El curso inicia el ${estado.inicioTexto}`
+    : desalineada
+    ? `⚠ Semana activa: ${cfg.semana_activa} · Semana real de hoy: ${estado.tipo === "en_curso" ? estado.semanaReal : ""} · Ajusta si es necesario`
+    : null;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -159,14 +173,15 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
         <button onClick={onLogout} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Salir</button>
       </header>
 
-      {desalineada && (
+      {banner && (
         <div className="animate-fade-in">
           <div className="h-[2px] w-full bg-gold" />
           <div className="px-4 py-2 text-[11px] text-gold/90 bg-gold/5">
-            ⚠ Semana activa: {cfg.semana_activa} · Semana real de hoy: {semReal} · Ajusta si es necesario
+            {banner}
           </div>
         </div>
       )}
+
 
       <div className="animate-fade-in" key={reloadKey}>
         {tab === "lista" && <ListaDia pin={pin} mes={cfg.mes_activo} semana={cfg.semana_activa} fecha={hoy} />}
