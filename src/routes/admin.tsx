@@ -308,7 +308,7 @@ function SecLogros({ pass }: { pass: string }) {
         <div className="rounded-2xl bg-surface border border-white/5 p-2 h-fit max-h-[70vh] overflow-y-auto">
           {players.map((p) => (
             <button key={p.id} onClick={() => setSel(p.id)} className={`w-full text-left px-3 py-2 rounded-lg ${sel === p.id ? "bg-gold text-gold-foreground" : "hover:bg-white/5"}`}>
-              {p.nombre}<span className="text-xs opacity-60 ml-2">{p.grupo}·{p.mes}</span>
+              {p.nombre}<span className="text-xs opacity-60 ml-2 capitalize">{p.mes}</span>
             </button>
           ))}
         </div>
