@@ -645,9 +645,9 @@ function SecConfig({ pass }: { pass: string }) {
 
       <form onSubmit={subirFoto} className="mt-6 bg-surface border border-white/5 rounded-2xl p-5 space-y-3">
         <h2 className="font-display">Subir foto semanal</h2>
-        <div className="grid grid-cols-3 gap-3">
-          <select value={foto.grupo} onChange={(e) => setFoto({ ...foto, grupo: e.target.value })} className="h-10 px-3 rounded-xl bg-background border border-white/10">
-            <option>A</option><option>B</option>
+        <div className="grid grid-cols-2 gap-3">
+          <select value={foto.mes} onChange={(e) => setFoto({ ...foto, mes: e.target.value })} className="h-10 px-3 rounded-xl bg-background border border-white/10 capitalize">
+            {MESES.map((m) => <option key={m}>{m}</option>)}
           </select>
           <select value={foto.mes} onChange={(e) => setFoto({ ...foto, mes: e.target.value })} className="h-10 px-3 rounded-xl bg-background border border-white/10 capitalize">
             {MESES.map((m) => <option key={m}>{m}</option>)}
