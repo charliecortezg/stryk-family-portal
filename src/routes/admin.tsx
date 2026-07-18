@@ -649,9 +649,6 @@ function SecConfig({ pass }: { pass: string }) {
           <select value={foto.mes} onChange={(e) => setFoto({ ...foto, mes: e.target.value })} className="h-10 px-3 rounded-xl bg-background border border-white/10 capitalize">
             {MESES.map((m) => <option key={m}>{m}</option>)}
           </select>
-          <select value={foto.mes} onChange={(e) => setFoto({ ...foto, mes: e.target.value })} className="h-10 px-3 rounded-xl bg-background border border-white/10 capitalize">
-            {MESES.map((m) => <option key={m}>{m}</option>)}
-          </select>
           <select value={foto.semana} onChange={(e) => setFoto({ ...foto, semana: Number(e.target.value) })} className="h-10 px-3 rounded-xl bg-background border border-white/10">
             {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Sem {n}</option>)}
           </select>
