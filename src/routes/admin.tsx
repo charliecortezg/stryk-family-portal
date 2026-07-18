@@ -20,7 +20,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Jugador = { id: string; nombre: string; grupo: "A" | "B"; mes: string; codigo_familia: string; activo: boolean };
+type Jugador = { id: string; nombre: string; grupo: string; mes: string; codigo_familia: string; activo: boolean };
 type ConfigRow = { pin_coach: string; password_admin: string; mes_activo: string; semana_activa: number };
 
 function AdminPage() {
