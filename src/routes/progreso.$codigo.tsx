@@ -22,7 +22,7 @@ export const Route = createFileRoute("/progreso/$codigo")({
 });
 
 type PortalData = {
-  jugador: { id: string; nombre: string; grupo: "A" | "B"; mes: string };
+  jugador: { id: string; nombre: string; grupo: string; mes: string };
   config: { mes_activo: string; semana_activa: number };
   diarias: { fecha: string; semana: number; asistencia: string; esfuerzo: number | null; aplicacion_tactica: number | null; trabajo_equipo: number | null; comunicacion: number | null }[];
   tecnicas: { semana: number; indicador: string; valor: number; fecha: string }[];
