@@ -350,19 +350,16 @@ function SecLogros({ pass }: { pass: string }) {
 function SecReportes({ pass }: { pass: string }) {
   const [players, setPlayers] = useState<Jugador[]>([]);
   const [sel, setSel] = useState<string | null>(null);
-  const [grupoFiltro, setGrupoFiltro] = useState<"TODOS" | "A" | "B">("TODOS");
-  const [publicados, setPublicados] = useState<{ count: number; grupo: string; mes: string } | null>(null);
+  const [publicados, setPublicados] = useState<{ count: number; mes: string } | null>(null);
   const [showCodigos, setShowCodigos] = useState(false);
 
   useEffect(() => { rpc<Jugador[]>("listar_jugadores", { p_pin: pass }).then(setPlayers); }, [pass]);
 
-  const filtered = players.filter((p) => grupoFiltro === "TODOS" || p.grupo === grupoFiltro);
-
-  const publicarGrupo = async (grupo: string, mes: string) => {
-    if (!confirm(`Publicar TODOS los reportes de Grupo ${grupo}·${mes}?`)) return;
-    await rpc("publicar_grupo", { p_pass: pass, p_grupo: grupo, p_mes: mes });
-    const count = players.filter((p) => p.grupo === grupo && p.mes === mes).length;
-    setPublicados({ count, grupo, mes });
+  const publicarTodo = async (mes: string) => {
+    if (!confirm(`Publicar TODOS los reportes de ${mes}?`)) return;
+    await rpc("publicar_grupo", { p_pass: pass, p_grupo: "V26", p_mes: mes });
+    const count = players.filter((p) => p.mes === mes).length;
+    setPublicados({ count, mes });
     setShowCodigos(false);
   };
 
@@ -383,7 +380,7 @@ function SecReportes({ pass }: { pass: string }) {
           </div>
           {showCodigos && (
             <div className="w-full mt-2 pt-3 border-t border-white/10 grid sm:grid-cols-2 gap-2">
-              {players.filter((p) => p.grupo === publicados.grupo && p.mes === publicados.mes).map((p) => (
+              {players.filter((p) => p.mes === publicados.mes).map((p) => (
                 <div key={p.id} className="flex items-center justify-between gap-2 text-sm bg-background/50 rounded-lg px-3 py-2">
                   <span>{p.nombre}</span>
                   <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/progreso/${p.codigo_familia}`); toast.success("Link copiado"); }} className="font-mono text-gold text-xs hover:underline">
@@ -397,22 +394,13 @@ function SecReportes({ pass }: { pass: string }) {
       )}
       <div className="grid lg:grid-cols-[280px_1fr] gap-6">
         <div className="rounded-2xl bg-surface border border-white/5 p-2 h-fit max-h-[70vh] overflow-y-auto no-print">
-          <div className="p-2 flex gap-1">
-            {(["TODOS", "A", "B"] as const).map((g) => (
-              <button key={g} onClick={() => setGrupoFiltro(g)}
-                className={`flex-1 text-xs px-2 py-1 rounded-lg ${grupoFiltro === g ? "bg-gold text-gold-foreground" : "bg-white/5"}`}>
-                {g === "TODOS" ? "Todos" : `Grupo ${g}`}
-              </button>
-            ))}
-          </div>
-          {filtered.map((p) => (
+          {players.map((p) => (
             <button key={p.id} onClick={() => setSel(p.id)} className={`w-full text-left px-3 py-2 rounded-lg ${sel === p.id ? "bg-gold text-gold-foreground" : "hover:bg-white/5"}`}>
-              {p.nombre}<span className="text-xs opacity-60 ml-2">{p.grupo}·{p.mes}</span>
+              {p.nombre}<span className="text-xs opacity-60 ml-2 capitalize">{p.mes}</span>
             </button>
           ))}
-          <div className="border-t border-white/10 mt-3 pt-3 space-y-2">
-            <button onClick={() => publicarGrupo("A", "julio")} className="w-full text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10">Publicar todo Grupo A · julio</button>
-            <button onClick={() => publicarGrupo("B", "julio")} className="w-full text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10">Publicar todo Grupo B · julio</button>
+          <div className="border-t border-white/10 mt-3 pt-3">
+            <button onClick={() => publicarTodo("julio")} className="w-full text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10">Publicar todo · julio</button>
           </div>
         </div>
         <div>
