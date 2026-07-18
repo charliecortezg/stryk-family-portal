@@ -20,7 +20,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type Jugador = { id: string; nombre: string; grupo: "A" | "B"; mes: string; codigo_familia: string; activo: boolean };
+type Jugador = { id: string; nombre: string; grupo: string; mes: string; codigo_familia: string; activo: boolean };
 type ConfigRow = { pin_coach: string; password_admin: string; mes_activo: string; semana_activa: number };
 
 function AdminPage() {
@@ -137,7 +137,7 @@ function SecJugadores({ pass }: { pass: string }) {
           <table className="w-full text-sm">
             <thead className="bg-background/50 text-left text-muted-foreground text-xs uppercase">
               <tr>
-                <th className="px-4 py-3">Nombre</th><th className="px-4 py-3">Grupo</th>
+                <th className="px-4 py-3">Nombre</th>
                 <th className="px-4 py-3">Mes</th><th className="px-4 py-3">Código</th>
                 <th className="px-4 py-3">Estado</th><th className="px-4 py-3"></th>
               </tr>
@@ -146,7 +146,6 @@ function SecJugadores({ pass }: { pass: string }) {
               {list.map((j) => (
                 <tr key={j.id} className="border-t border-white/5">
                   <td className="px-4 py-3 font-medium">{j.nombre}</td>
-                  <td className="px-4 py-3">{j.grupo}</td>
                   <td className="px-4 py-3 capitalize">{j.mes}</td>
                   <td className="px-4 py-3 font-mono text-gold">{j.codigo_familia}</td>
                   <td className="px-4 py-3">
@@ -177,13 +176,13 @@ function SecJugadores({ pass }: { pass: string }) {
 }
 
 function NuevoJugadorModal({ pass, onClose, onSaved }: { pass: string; onClose: () => void; onSaved: () => void }) {
-  const [f, setF] = useState({ nombre: "", grupo: "A", mes: "julio" });
+  const [f, setF] = useState({ nombre: "", mes: "julio" });
   const [loading, setLoading] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await rpc("crear_jugador", { p_pass: pass, p_nombre: f.nombre, p_grupo: f.grupo, p_mes: f.mes });
+      await rpc("crear_jugador", { p_pass: pass, p_nombre: f.nombre, p_grupo: "V26", p_mes: f.mes });
       toast.success("Jugador creado");
       onSaved();
     } catch (e) { toast.error(String(e)); } finally { setLoading(false); }
@@ -194,20 +193,11 @@ function NuevoJugadorModal({ pass, onClose, onSaved }: { pass: string; onClose: 
         <h2 className="text-lg font-display">Nuevo jugador</h2>
         <label className="block mt-4 text-xs uppercase tracking-widest text-muted-foreground">Nombre</label>
         <input required value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-background border border-white/10" />
-        <div className="grid grid-cols-2 gap-3 mt-4">
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-muted-foreground">Grupo</label>
-            <select value={f.grupo} onChange={(e) => setF({ ...f, grupo: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-background border border-white/10">
-              <option value="A">A · 8-9 años</option>
-              <option value="B">B · 10-11 años</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs uppercase tracking-widest text-muted-foreground">Mes</label>
-            <select value={f.mes} onChange={(e) => setF({ ...f, mes: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-background border border-white/10 capitalize">
-              {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
+        <div className="mt-4">
+          <label className="block text-xs uppercase tracking-widest text-muted-foreground">Mes</label>
+          <select value={f.mes} onChange={(e) => setF({ ...f, mes: e.target.value })} className="mt-1 w-full h-11 px-3 rounded-xl bg-background border border-white/10 capitalize">
+            {MESES.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
         </div>
         <div className="mt-6 flex gap-2 justify-end">
           <button type="button" onClick={onClose} className="h-11 px-4 rounded-xl bg-white/5">Cancelar</button>
@@ -220,23 +210,12 @@ function NuevoJugadorModal({ pass, onClose, onSaved }: { pass: string; onClose: 
 
 // ---------------- Semaforo ----------------
 function SecSemaforo({ pass }: { pass: string }) {
-  const [f, setF] = useState({ grupo: "A", mes: "julio", semana: 1 });
-  const [rowsA, setRowsA] = useState<{ jugador_id: string; nombre: string; fecha: string | null; asistencia: string | null; completo: boolean }[]>([]);
-  const [rowsB, setRowsB] = useState<{ jugador_id: string; nombre: string; fecha: string | null; asistencia: string | null; completo: boolean }[]>([]);
+  const [f, setF] = useState({ mes: "julio", semana: 1 });
+  const [rows, setRows] = useState<{ jugador_id: string; nombre: string; fecha: string | null; asistencia: string | null; completo: boolean }[]>([]);
 
   useEffect(() => {
-    if (f.grupo === "TODOS") {
-      Promise.all([
-        rpc<typeof rowsA>("semaforo", { p_pass: pass, p_grupo: "A", p_mes: f.mes, p_semana: f.semana }),
-        rpc<typeof rowsA>("semaforo", { p_pass: pass, p_grupo: "B", p_mes: f.mes, p_semana: f.semana }),
-      ]).then(([a, b]) => { setRowsA(a); setRowsB(b); });
-    } else {
-      rpc<typeof rowsA>("semaforo", { p_pass: pass, p_grupo: f.grupo, p_mes: f.mes, p_semana: f.semana })
-        .then((r) => { setRowsA(r); setRowsB([]); });
-    }
+    rpc<typeof rows>("semaforo", { p_pass: pass, p_grupo: null, p_mes: f.mes, p_semana: f.semana }).then(setRows);
   }, [pass, f]);
-
-  const rows = f.grupo === "TODOS" ? [...rowsA, ...rowsB] : rowsA;
 
   const jugadores = useMemo(() => {
     const map = new Map<string, { nombre: string; dias: Record<string, { asistencia: string | null; completo: boolean }> }>();
@@ -261,10 +240,6 @@ function SecSemaforo({ pass }: { pass: string }) {
     <div>
       <h1 className="text-2xl font-display mb-6">Semáforo de registro</h1>
       <div className="flex flex-wrap gap-3 mb-4">
-        <select value={f.grupo} onChange={(e) => setF({ ...f, grupo: e.target.value })} className="h-10 px-3 rounded-xl bg-surface border border-white/10">
-          <option value="TODOS">Todos</option>
-          <option value="A">Grupo A</option><option value="B">Grupo B</option>
-        </select>
         <select value={f.mes} onChange={(e) => setF({ ...f, mes: e.target.value })} className="h-10 px-3 rounded-xl bg-surface border border-white/10 capitalize">
           {MESES.map((m) => <option key={m}>{m}</option>)}
         </select>
@@ -333,7 +308,7 @@ function SecLogros({ pass }: { pass: string }) {
         <div className="rounded-2xl bg-surface border border-white/5 p-2 h-fit max-h-[70vh] overflow-y-auto">
           {players.map((p) => (
             <button key={p.id} onClick={() => setSel(p.id)} className={`w-full text-left px-3 py-2 rounded-lg ${sel === p.id ? "bg-gold text-gold-foreground" : "hover:bg-white/5"}`}>
-              {p.nombre}<span className="text-xs opacity-60 ml-2">{p.grupo}·{p.mes}</span>
+              {p.nombre}<span className="text-xs opacity-60 ml-2 capitalize">{p.mes}</span>
             </button>
           ))}
         </div>
@@ -375,19 +350,16 @@ function SecLogros({ pass }: { pass: string }) {
 function SecReportes({ pass }: { pass: string }) {
   const [players, setPlayers] = useState<Jugador[]>([]);
   const [sel, setSel] = useState<string | null>(null);
-  const [grupoFiltro, setGrupoFiltro] = useState<"TODOS" | "A" | "B">("TODOS");
-  const [publicados, setPublicados] = useState<{ count: number; grupo: string; mes: string } | null>(null);
+  const [publicados, setPublicados] = useState<{ count: number; mes: string } | null>(null);
   const [showCodigos, setShowCodigos] = useState(false);
 
   useEffect(() => { rpc<Jugador[]>("listar_jugadores", { p_pin: pass }).then(setPlayers); }, [pass]);
 
-  const filtered = players.filter((p) => grupoFiltro === "TODOS" || p.grupo === grupoFiltro);
-
-  const publicarGrupo = async (grupo: string, mes: string) => {
-    if (!confirm(`Publicar TODOS los reportes de Grupo ${grupo}·${mes}?`)) return;
-    await rpc("publicar_grupo", { p_pass: pass, p_grupo: grupo, p_mes: mes });
-    const count = players.filter((p) => p.grupo === grupo && p.mes === mes).length;
-    setPublicados({ count, grupo, mes });
+  const publicarTodo = async (mes: string) => {
+    if (!confirm(`Publicar TODOS los reportes de ${mes}?`)) return;
+    await rpc("publicar_grupo", { p_pass: pass, p_grupo: "V26", p_mes: mes });
+    const count = players.filter((p) => p.mes === mes).length;
+    setPublicados({ count, mes });
     setShowCodigos(false);
   };
 
@@ -408,7 +380,7 @@ function SecReportes({ pass }: { pass: string }) {
           </div>
           {showCodigos && (
             <div className="w-full mt-2 pt-3 border-t border-white/10 grid sm:grid-cols-2 gap-2">
-              {players.filter((p) => p.grupo === publicados.grupo && p.mes === publicados.mes).map((p) => (
+              {players.filter((p) => p.mes === publicados.mes).map((p) => (
                 <div key={p.id} className="flex items-center justify-between gap-2 text-sm bg-background/50 rounded-lg px-3 py-2">
                   <span>{p.nombre}</span>
                   <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/progreso/${p.codigo_familia}`); toast.success("Link copiado"); }} className="font-mono text-gold text-xs hover:underline">
@@ -422,22 +394,13 @@ function SecReportes({ pass }: { pass: string }) {
       )}
       <div className="grid lg:grid-cols-[280px_1fr] gap-6">
         <div className="rounded-2xl bg-surface border border-white/5 p-2 h-fit max-h-[70vh] overflow-y-auto no-print">
-          <div className="p-2 flex gap-1">
-            {(["TODOS", "A", "B"] as const).map((g) => (
-              <button key={g} onClick={() => setGrupoFiltro(g)}
-                className={`flex-1 text-xs px-2 py-1 rounded-lg ${grupoFiltro === g ? "bg-gold text-gold-foreground" : "bg-white/5"}`}>
-                {g === "TODOS" ? "Todos" : `Grupo ${g}`}
-              </button>
-            ))}
-          </div>
-          {filtered.map((p) => (
+          {players.map((p) => (
             <button key={p.id} onClick={() => setSel(p.id)} className={`w-full text-left px-3 py-2 rounded-lg ${sel === p.id ? "bg-gold text-gold-foreground" : "hover:bg-white/5"}`}>
-              {p.nombre}<span className="text-xs opacity-60 ml-2">{p.grupo}·{p.mes}</span>
+              {p.nombre}<span className="text-xs opacity-60 ml-2 capitalize">{p.mes}</span>
             </button>
           ))}
-          <div className="border-t border-white/10 mt-3 pt-3 space-y-2">
-            <button onClick={() => publicarGrupo("A", "julio")} className="w-full text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10">Publicar todo Grupo A · julio</button>
-            <button onClick={() => publicarGrupo("B", "julio")} className="w-full text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10">Publicar todo Grupo B · julio</button>
+          <div className="border-t border-white/10 mt-3 pt-3">
+            <button onClick={() => publicarTodo("julio")} className="w-full text-xs px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10">Publicar todo · julio</button>
           </div>
         </div>
         <div>
@@ -626,7 +589,7 @@ function ReporteImprimible({ jugador, data, mensaje, publicado }: { jugador: Jug
 // ---------------- Config ----------------
 function SecConfig({ pass }: { pass: string }) {
   const [cfg, setCfg] = useState<ConfigRow | null>(null);
-  const [foto, setFoto] = useState({ grupo: "A", mes: "julio", semana: 1, url: "" });
+  const [foto, setFoto] = useState({ mes: "julio", semana: 1, url: "" });
 
   useEffect(() => { rpc<ConfigRow[]>("get_config", { p_pin: pass }).then((r) => setCfg(r[0])); }, [pass]);
 
@@ -642,7 +605,7 @@ function SecConfig({ pass }: { pass: string }) {
 
   const subirFoto = async (e: React.FormEvent) => {
     e.preventDefault();
-    await rpc("subir_foto", { p_pass: pass, p_grupo: foto.grupo, p_mes: foto.mes, p_semana: foto.semana, p_url: foto.url });
+    await rpc("subir_foto", { p_pass: pass, p_grupo: "V26", p_mes: foto.mes, p_semana: foto.semana, p_url: foto.url });
     toast.success("Foto añadida");
     setFoto({ ...foto, url: "" });
   };
@@ -682,10 +645,7 @@ function SecConfig({ pass }: { pass: string }) {
 
       <form onSubmit={subirFoto} className="mt-6 bg-surface border border-white/5 rounded-2xl p-5 space-y-3">
         <h2 className="font-display">Subir foto semanal</h2>
-        <div className="grid grid-cols-3 gap-3">
-          <select value={foto.grupo} onChange={(e) => setFoto({ ...foto, grupo: e.target.value })} className="h-10 px-3 rounded-xl bg-background border border-white/10">
-            <option>A</option><option>B</option>
-          </select>
+        <div className="grid grid-cols-2 gap-3">
           <select value={foto.mes} onChange={(e) => setFoto({ ...foto, mes: e.target.value })} className="h-10 px-3 rounded-xl bg-background border border-white/10 capitalize">
             {MESES.map((m) => <option key={m}>{m}</option>)}
           </select>
