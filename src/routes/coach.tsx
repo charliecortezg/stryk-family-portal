@@ -95,21 +95,29 @@ const NOMBRES_SEMANA: Record<number, string> = {
   4: "Pressing + tercer hombre",
 };
 
-const INICIOS_MES: Record<string, string> = {
-  junio: "2026-06-08",
-  julio: "2026-07-06",
-  agosto: "2026-08-03",
-};
+function fechaLargaCorta(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  return new Intl.DateTimeFormat("es-MX", {
+    timeZone: "UTC", day: "numeric", month: "long",
+  }).format(date);
+}
 
-function semanaRealHoy(mes: string, hoy: string): number | null {
-  const inicio = INICIOS_MES[mes.toLowerCase()];
-  if (!inicio) return null;
-  const d1 = new Date(inicio + "T00:00:00");
+type EstadoCurso =
+  | { tipo: "antes"; inicioTexto: string }
+  | { tipo: "en_curso"; semanaReal: number }
+  | { tipo: "despues" }
+  | { tipo: "sin_fecha" };
+
+function estadoCurso(fechaInicio: string | undefined, hoy: string): EstadoCurso {
+  if (!fechaInicio) return { tipo: "sin_fecha" };
+  const d1 = new Date(fechaInicio + "T00:00:00");
   const d2 = new Date(hoy + "T00:00:00");
   const dias = Math.floor((d2.getTime() - d1.getTime()) / 86400000);
-  if (dias < 0) return null;
+  if (dias < 0) return { tipo: "antes", inicioTexto: fechaLargaCorta(fechaInicio) };
   const s = Math.floor(dias / 7) + 1;
-  return s >= 1 && s <= 4 ? s : null;
+  if (s >= 1 && s <= 4) return { tipo: "en_curso", semanaReal: s };
+  return { tipo: "despues" };
 }
 
 function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
