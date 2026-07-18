@@ -605,7 +605,7 @@ function SecConfig({ pass }: { pass: string }) {
 
   const subirFoto = async (e: React.FormEvent) => {
     e.preventDefault();
-    await rpc("subir_foto", { p_pass: pass, p_grupo: foto.grupo, p_mes: foto.mes, p_semana: foto.semana, p_url: foto.url });
+    await rpc("subir_foto", { p_pass: pass, p_grupo: "V26", p_mes: foto.mes, p_semana: foto.semana, p_url: foto.url });
     toast.success("Foto añadida");
     setFoto({ ...foto, url: "" });
   };
