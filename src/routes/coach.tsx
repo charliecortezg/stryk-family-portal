@@ -134,8 +134,8 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
 
   if (!cfg) return <SkeletonScreen />;
 
-  const semReal = semanaRealHoy(cfg.mes_activo, hoy);
-  const desalineada = semReal !== null && semReal !== cfg.semana_activa;
+  const estado = estadoCurso(cfg.fecha_inicio, hoy);
+  const desalineada = estado.tipo === "en_curso" && estado.semanaReal !== cfg.semana_activa;
 
   const confirmarCambio = async () => {
     if (confirmSem == null) return;
@@ -150,6 +150,12 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
     } catch (e) { toast.error(String(e)); }
     finally { setCambiando(false); }
   };
+
+  const banner = estado.tipo === "antes"
+    ? `El curso inicia el ${estado.inicioTexto}`
+    : desalineada
+    ? `⚠ Semana activa: ${cfg.semana_activa} · Semana real de hoy: ${estado.tipo === "en_curso" ? estado.semanaReal : ""} · Ajusta si es necesario`
+    : null;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -167,14 +173,15 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
         <button onClick={onLogout} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Salir</button>
       </header>
 
-      {desalineada && (
+      {banner && (
         <div className="animate-fade-in">
           <div className="h-[2px] w-full bg-gold" />
           <div className="px-4 py-2 text-[11px] text-gold/90 bg-gold/5">
-            ⚠ Semana activa: {cfg.semana_activa} · Semana real de hoy: {semReal} · Ajusta si es necesario
+            {banner}
           </div>
         </div>
       )}
+
 
       <div className="animate-fade-in" key={reloadKey}>
         {tab === "lista" && <ListaDia pin={pin} mes={cfg.mes_activo} semana={cfg.semana_activa} fecha={hoy} />}
