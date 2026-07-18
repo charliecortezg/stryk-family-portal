@@ -96,7 +96,7 @@ function PortalContent({ data }: { data: PortalData }) {
             <div className="text-xs text-white/60">Hola, familia de</div>
             <div className="font-display text-xl leading-tight">{jugador.nombre}</div>
           </div>
-          <span className="text-xs bg-white/10 rounded-full px-3 py-1 capitalize">Grupo {jugador.grupo} · {jugador.mes}</span>
+          <span className="text-xs bg-white/10 rounded-full px-3 py-1 capitalize">Verano 2026 · {jugador.mes}</span>
         </div>
       </header>
 
