@@ -192,6 +192,21 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
     ? `⚠ Semana activa: ${cfg.semana_activa} · Semana real de hoy: ${estado.tipo === "en_curso" ? estado.semanaReal : ""} · Ajusta si es necesario`
     : null;
 
+  const [fechaSel, setFechaSel] = useState<string>(hoy);
+  const [calOpen, setCalOpen] = useState(false);
+  const dias = useMemo(() => diasCurso(cfg.fecha_inicio), [cfg.fecha_inicio]);
+  const idxDia = dias.indexOf(fechaSel);
+  const semanaEval = semanaDeFecha(cfg.fecha_inicio, fechaSel) ?? cfg.semana_activa;
+  const editandoPasado = fechaSel !== hoy;
+
+  const irDia = (dir: number) => {
+    if (idxDia < 0) return;
+    const next = dias[idxDia + dir];
+    if (!next) return;
+    if (next > hoy) return;
+    setFechaSel(next);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center justify-between">
@@ -217,10 +232,30 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
         </div>
       )}
 
+      <div className="px-4 py-2 flex items-center gap-2 border-b border-white/5 bg-background/60">
+        <button onClick={() => irDia(-1)} disabled={idxDia <= 0}
+          className="h-9 w-9 rounded-lg border border-white/10 text-sm disabled:opacity-30 active:scale-95 transition-transform">◀</button>
+        <button onClick={() => setCalOpen(true)}
+          className="flex-1 h-9 rounded-lg border border-white/10 bg-surface text-sm font-medium capitalize active:opacity-70">
+          {etiquetaDia(fechaSel, hoy)} <span className="text-gold text-xs ml-1">▾</span>
+        </button>
+        <button onClick={() => irDia(1)} disabled={idxDia < 0 || idxDia >= dias.length - 1 || dias[idxDia + 1] > hoy}
+          className="h-9 w-9 rounded-lg border border-white/10 text-sm disabled:opacity-30 active:scale-95 transition-transform">▶</button>
+        {editandoPasado && (
+          <button onClick={() => setFechaSel(hoy)}
+            className="h-9 px-3 rounded-lg bg-gold text-gold-foreground text-xs font-semibold active:scale-95 transition-transform">Hoy</button>
+        )}
+      </div>
 
-      <div className="animate-fade-in" key={reloadKey}>
-        {tab === "lista" && <ListaDia pin={pin} mes={cfg.mes_activo} semana={cfg.semana_activa} fecha={hoy} />}
-        {tab === "resumen" && <ResumenTab pin={pin} mes={cfg.mes_activo} fecha={hoy} />}
+      {editandoPasado && (
+        <div className="px-4 py-2 text-[11px] bg-warning/10 text-warning border-b border-warning/20 animate-fade-in">
+          Editando {etiquetaDia(fechaSel, hoy)} · Semana {semanaEval}. Los cambios se guardan en ese día.
+        </div>
+      )}
+
+      <div className="animate-fade-in" key={`${reloadKey}-${fechaSel}`}>
+        {tab === "lista" && <ListaDia pin={pin} mes={cfg.mes_activo} semana={semanaEval} fecha={fechaSel} />}
+        {tab === "resumen" && <ResumenTab pin={pin} mes={cfg.mes_activo} fecha={fechaSel} />}
       </div>
 
       <nav className="fixed bottom-0 inset-x-0 bg-surface border-t border-white/5 grid grid-cols-2 z-20">
@@ -231,6 +266,15 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
           </button>
         ))}
       </nav>
+
+      {calOpen && (
+        <CalendarioSheet
+          dias={dias} fechaSel={fechaSel} hoy={hoy}
+          onClose={() => setCalOpen(false)}
+          onPick={(f) => { setFechaSel(f); setCalOpen(false); }}
+        />
+      )}
+
 
       {sheetOpen && (
         <div className="fixed inset-0 z-30 flex items-end" onClick={() => setSheetOpen(false)}>
