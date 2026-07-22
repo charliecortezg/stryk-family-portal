@@ -120,6 +120,41 @@ function estadoCurso(fechaInicio: string | undefined, hoy: string): EstadoCurso 
   return { tipo: "despues" };
 }
 
+function diasCurso(fechaInicio: string | undefined): string[] {
+  if (!fechaInicio) return [];
+  const [y, m, d] = fechaInicio.split("-").map(Number);
+  const out: string[] = [];
+  for (let s = 0; s < 4; s++) {
+    for (let i = 0; i < 5; i++) {
+      const dt = new Date(Date.UTC(y, m - 1, d + s * 7 + i));
+      out.push(dt.toISOString().slice(0, 10));
+    }
+  }
+  return out;
+}
+
+function semanaDeFecha(fechaInicio: string | undefined, fecha: string): number | null {
+  if (!fechaInicio) return null;
+  const d1 = new Date(fechaInicio + "T00:00:00");
+  const d2 = new Date(fecha + "T00:00:00");
+  const dias = Math.floor((d2.getTime() - d1.getTime()) / 86400000);
+  if (dias < 0) return null;
+  const s = Math.floor(dias / 7) + 1;
+  return s >= 1 && s <= 4 ? s : null;
+}
+
+function etiquetaDia(fecha: string, hoy: string): string {
+  const [y, m, d] = fecha.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const base = new Intl.DateTimeFormat("es-MX", {
+    timeZone: "UTC", weekday: "short", day: "numeric", month: "short",
+  }).format(dt).replace(/\./g, "");
+  const [hy, hm, hd] = hoy.split("-").map(Number);
+  const diff = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(hy, hm - 1, hd)) / 86400000);
+  const tag = diff === 0 ? " · Hoy" : diff === -1 ? " · Ayer" : diff === 1 ? " · Mañana" : "";
+  return base + tag;
+}
+
 function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
   const [tab, setTab] = useState<"lista" | "resumen">("lista");
   const [cfg, setCfg] = useState<Cfg | null>(null);
