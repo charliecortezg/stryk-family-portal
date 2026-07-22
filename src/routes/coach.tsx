@@ -695,6 +695,56 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
+function CalendarioSheet({
+  dias, fechaSel, hoy, onClose, onPick,
+}: {
+  dias: string[]; fechaSel: string; hoy: string; onClose: () => void; onPick: (f: string) => void;
+}) {
+  const semanas: string[][] = [0, 1, 2, 3].map((s) => dias.slice(s * 5, s * 5 + 5));
+  return (
+    <div className="fixed inset-0 z-30 flex items-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 animate-fade-in" />
+      <div onClick={(e) => e.stopPropagation()}
+        className="relative w-full bg-surface border-t border-white/10 rounded-t-3xl p-5 pb-8 animate-scale-in max-h-[85vh] overflow-y-auto">
+        <div className="mx-auto w-10 h-1 rounded-full bg-white/20 mb-4" />
+        <div className="text-xs uppercase tracking-widest text-muted-foreground text-center mb-4">Elegir día</div>
+        <div className="space-y-4">
+          {semanas.map((dias5, sIdx) => (
+            <div key={sIdx}>
+              <div className="flex items-baseline justify-between mb-2">
+                <div className="font-display text-sm">Semana {sIdx + 1}</div>
+                <div className="text-[11px] text-muted-foreground">{NOMBRES_SEMANA[sIdx + 1]}</div>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {dias5.map((f) => {
+                  const [, m, d] = f.split("-");
+                  const esHoy = f === hoy;
+                  const esSel = f === fechaSel;
+                  const futuro = f > hoy;
+                  const mesTxt = new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", month: "short" })
+                    .format(new Date(f + "T00:00:00Z")).replace(".", "");
+                  return (
+                    <button key={f} disabled={futuro} onClick={() => onPick(f)}
+                      className={`h-16 rounded-xl flex flex-col items-center justify-center transition-all active:scale-95 ${
+                        esSel ? "bg-gold text-gold-foreground border border-gold"
+                          : esHoy ? "bg-background border-2 border-gold text-foreground"
+                          : "bg-background border border-white/10 text-foreground"
+                      } ${futuro ? "opacity-30" : ""}`}>
+                      <span className="font-display text-lg leading-none">{Number(d)}</span>
+                      <span className="text-[10px] opacity-70 mt-0.5">{mesTxt}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onClose} className="mt-5 w-full h-12 rounded-xl border border-white/10 text-sm">Cerrar</button>
+      </div>
+    </div>
+  );
+}
+
 function ResumenTab({ pin, mes, fecha }: { pin: string; mes: string; fecha: string }) {
   const [rows, setRows] = useState<EvalRow[] | null>(null);
   useEffect(() => {
