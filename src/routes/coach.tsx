@@ -120,6 +120,41 @@ function estadoCurso(fechaInicio: string | undefined, hoy: string): EstadoCurso 
   return { tipo: "despues" };
 }
 
+function diasCurso(fechaInicio: string | undefined): string[] {
+  if (!fechaInicio) return [];
+  const [y, m, d] = fechaInicio.split("-").map(Number);
+  const out: string[] = [];
+  for (let s = 0; s < 4; s++) {
+    for (let i = 0; i < 5; i++) {
+      const dt = new Date(Date.UTC(y, m - 1, d + s * 7 + i));
+      out.push(dt.toISOString().slice(0, 10));
+    }
+  }
+  return out;
+}
+
+function semanaDeFecha(fechaInicio: string | undefined, fecha: string): number | null {
+  if (!fechaInicio) return null;
+  const d1 = new Date(fechaInicio + "T00:00:00");
+  const d2 = new Date(fecha + "T00:00:00");
+  const dias = Math.floor((d2.getTime() - d1.getTime()) / 86400000);
+  if (dias < 0) return null;
+  const s = Math.floor(dias / 7) + 1;
+  return s >= 1 && s <= 4 ? s : null;
+}
+
+function etiquetaDia(fecha: string, hoy: string): string {
+  const [y, m, d] = fecha.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const base = new Intl.DateTimeFormat("es-MX", {
+    timeZone: "UTC", weekday: "short", day: "numeric", month: "short",
+  }).format(dt).replace(/\./g, "");
+  const [hy, hm, hd] = hoy.split("-").map(Number);
+  const diff = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(hy, hm - 1, hd)) / 86400000);
+  const tag = diff === 0 ? " · Hoy" : diff === -1 ? " · Ayer" : diff === 1 ? " · Mañana" : "";
+  return base + tag;
+}
+
 function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
   const [tab, setTab] = useState<"lista" | "resumen">("lista");
   const [cfg, setCfg] = useState<Cfg | null>(null);
@@ -157,6 +192,21 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
     ? `⚠ Semana activa: ${cfg.semana_activa} · Semana real de hoy: ${estado.tipo === "en_curso" ? estado.semanaReal : ""} · Ajusta si es necesario`
     : null;
 
+  const [fechaSel, setFechaSel] = useState<string>(hoy);
+  const [calOpen, setCalOpen] = useState(false);
+  const dias = useMemo(() => diasCurso(cfg.fecha_inicio), [cfg.fecha_inicio]);
+  const idxDia = dias.indexOf(fechaSel);
+  const semanaEval = semanaDeFecha(cfg.fecha_inicio, fechaSel) ?? cfg.semana_activa;
+  const editandoPasado = fechaSel !== hoy;
+
+  const irDia = (dir: number) => {
+    if (idxDia < 0) return;
+    const next = dias[idxDia + dir];
+    if (!next) return;
+    if (next > hoy) return;
+    setFechaSel(next);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-white/5 px-4 py-3 flex items-center justify-between">
@@ -182,10 +232,30 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
         </div>
       )}
 
+      <div className="px-4 py-2 flex items-center gap-2 border-b border-white/5 bg-background/60">
+        <button onClick={() => irDia(-1)} disabled={idxDia <= 0}
+          className="h-9 w-9 rounded-lg border border-white/10 text-sm disabled:opacity-30 active:scale-95 transition-transform">◀</button>
+        <button onClick={() => setCalOpen(true)}
+          className="flex-1 h-9 rounded-lg border border-white/10 bg-surface text-sm font-medium capitalize active:opacity-70">
+          {etiquetaDia(fechaSel, hoy)} <span className="text-gold text-xs ml-1">▾</span>
+        </button>
+        <button onClick={() => irDia(1)} disabled={idxDia < 0 || idxDia >= dias.length - 1 || dias[idxDia + 1] > hoy}
+          className="h-9 w-9 rounded-lg border border-white/10 text-sm disabled:opacity-30 active:scale-95 transition-transform">▶</button>
+        {editandoPasado && (
+          <button onClick={() => setFechaSel(hoy)}
+            className="h-9 px-3 rounded-lg bg-gold text-gold-foreground text-xs font-semibold active:scale-95 transition-transform">Hoy</button>
+        )}
+      </div>
 
-      <div className="animate-fade-in" key={reloadKey}>
-        {tab === "lista" && <ListaDia pin={pin} mes={cfg.mes_activo} semana={cfg.semana_activa} fecha={hoy} />}
-        {tab === "resumen" && <ResumenTab pin={pin} mes={cfg.mes_activo} fecha={hoy} />}
+      {editandoPasado && (
+        <div className="px-4 py-2 text-[11px] bg-warning/10 text-warning border-b border-warning/20 animate-fade-in">
+          Editando {etiquetaDia(fechaSel, hoy)} · Semana {semanaEval}. Los cambios se guardan en ese día.
+        </div>
+      )}
+
+      <div className="animate-fade-in" key={`${reloadKey}-${fechaSel}`}>
+        {tab === "lista" && <ListaDia pin={pin} mes={cfg.mes_activo} semana={semanaEval} fecha={fechaSel} />}
+        {tab === "resumen" && <ResumenTab pin={pin} mes={cfg.mes_activo} fecha={fechaSel} />}
       </div>
 
       <nav className="fixed bottom-0 inset-x-0 bg-surface border-t border-white/5 grid grid-cols-2 z-20">
@@ -196,6 +266,15 @@ function CoachApp({ pin, onLogout }: { pin: string; onLogout: () => void }) {
           </button>
         ))}
       </nav>
+
+      {calOpen && (
+        <CalendarioSheet
+          dias={dias} fechaSel={fechaSel} hoy={hoy}
+          onClose={() => setCalOpen(false)}
+          onPick={(f) => { setFechaSel(f); setCalOpen(false); }}
+        />
+      )}
+
 
       {sheetOpen && (
         <div className="fixed inset-0 z-30 flex items-end" onClick={() => setSheetOpen(false)}>
@@ -612,6 +691,56 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     <div className="mt-8 mb-4">
       <div className="w-10 h-[3px] bg-gold mb-2" />
       <h3 className="font-display text-xs uppercase" style={{ letterSpacing: "0.15em" }}>{children}</h3>
+    </div>
+  );
+}
+
+function CalendarioSheet({
+  dias, fechaSel, hoy, onClose, onPick,
+}: {
+  dias: string[]; fechaSel: string; hoy: string; onClose: () => void; onPick: (f: string) => void;
+}) {
+  const semanas: string[][] = [0, 1, 2, 3].map((s) => dias.slice(s * 5, s * 5 + 5));
+  return (
+    <div className="fixed inset-0 z-30 flex items-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 animate-fade-in" />
+      <div onClick={(e) => e.stopPropagation()}
+        className="relative w-full bg-surface border-t border-white/10 rounded-t-3xl p-5 pb-8 animate-scale-in max-h-[85vh] overflow-y-auto">
+        <div className="mx-auto w-10 h-1 rounded-full bg-white/20 mb-4" />
+        <div className="text-xs uppercase tracking-widest text-muted-foreground text-center mb-4">Elegir día</div>
+        <div className="space-y-4">
+          {semanas.map((dias5, sIdx) => (
+            <div key={sIdx}>
+              <div className="flex items-baseline justify-between mb-2">
+                <div className="font-display text-sm">Semana {sIdx + 1}</div>
+                <div className="text-[11px] text-muted-foreground">{NOMBRES_SEMANA[sIdx + 1]}</div>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {dias5.map((f) => {
+                  const [, m, d] = f.split("-");
+                  const esHoy = f === hoy;
+                  const esSel = f === fechaSel;
+                  const futuro = f > hoy;
+                  const mesTxt = new Intl.DateTimeFormat("es-MX", { timeZone: "UTC", month: "short" })
+                    .format(new Date(f + "T00:00:00Z")).replace(".", "");
+                  return (
+                    <button key={f} disabled={futuro} onClick={() => onPick(f)}
+                      className={`h-16 rounded-xl flex flex-col items-center justify-center transition-all active:scale-95 ${
+                        esSel ? "bg-gold text-gold-foreground border border-gold"
+                          : esHoy ? "bg-background border-2 border-gold text-foreground"
+                          : "bg-background border border-white/10 text-foreground"
+                      } ${futuro ? "opacity-30" : ""}`}>
+                      <span className="font-display text-lg leading-none">{Number(d)}</span>
+                      <span className="text-[10px] opacity-70 mt-0.5">{mesTxt}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onClose} className="mt-5 w-full h-12 rounded-xl border border-white/10 text-sm">Cerrar</button>
+      </div>
     </div>
   );
 }
